@@ -163,11 +163,13 @@ def connect_to_country(country_name: str, servers: List[Dict[str, Any]]):
         console.print("[bold yellow]Launching OpenVPN (sudo required)...[/bold yellow]")
         
         # Run OpenVPN
-        # --data-ciphers-fallback handles older servers using AES-128-CBC
+        # --data-ciphers-fallback and --data-ciphers with AES-128-CBC 
+        # handles older servers on OpenVPN 2.6+
         cmd = [
             "sudo", "openvpn", 
             "--config", config_path, 
             "--auth-user-pass", creds_path,
+            "--data-ciphers", "AES-256-GCM:AES-128-GCM:CHACHA20-POLY1305:AES-128-CBC",
             "--data-ciphers-fallback", "AES-128-CBC"
         ]
         
