@@ -174,7 +174,6 @@ def connect_to_country(country_name: str, servers: List[Dict[str, Any]]):
         # We generally want to keep the temp file only if debugging, but for a clean tool we should delete it.
         # However, if sudo fails immediately, we delete it.
         # If openvpn runs for hours, we delete it after it finishes.
-        import os
         if 'config_path' in locals() and os.path.exists(config_path):
             os.remove(config_path)
             console.print("[dim]Temporary config cleaned up.[/dim]")
