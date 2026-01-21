@@ -145,6 +145,12 @@ def connect_to_country(country_name: str, servers: List[Dict[str, Any]]):
         config_dir = os.path.expanduser("~/.k-vpn/configs")
         os.makedirs(config_dir, exist_ok=True)
         
+        # Create credentials file (VPN Gate standard: vpn/vpn)
+        creds_path = os.path.join(config_dir, "vpn_creds.txt")
+        with open(creds_path, "w") as f:
+            f.write("vpn\nvpn\n")
+        os.chmod(creds_path, 0o644) # Needs to be readable by sudo user
+        
         # Create a temporary file for the config
         with tempfile.NamedTemporaryFile(mode='wb', dir=config_dir, suffix='.ovpn', delete=False) as temp_config:
             temp_config.write(ovpn_data)
@@ -158,7 +164,8 @@ def connect_to_country(country_name: str, servers: List[Dict[str, Any]]):
         
         # Run OpenVPN
         # We use sudo because OpenVPN typically needs root to change routes/interfaces
-        cmd = ["sudo", "openvpn", "--config", config_path]
+        # We pass the credentials file to avoid manual prompt
+        cmd = ["sudo", "openvpn", "--config", config_path, "--auth-user-pass", creds_path]
         
         # We stream the output directly to the user so they can see logs/errors
         # and handle Ctrl+C naturally
@@ -169,14 +176,12 @@ def connect_to_country(country_name: str, servers: List[Dict[str, Any]]):
     except Exception as e:
         console.print(f"[bold red]Connection failed:[/bold red] {e}")
     finally:
-        # Cleanup is tricky because OpenVPN might still be running if we didn't wait, 
-        # but subprocess.run waits.
-        # We generally want to keep the temp file only if debugging, but for a clean tool we should delete it.
-        # However, if sudo fails immediately, we delete it.
-        # If openvpn runs for hours, we delete it after it finishes.
+        # Cleanup
         if 'config_path' in locals() and os.path.exists(config_path):
             os.remove(config_path)
-            console.print("[dim]Temporary config cleaned up.[/dim]")
+        if 'creds_path' in locals() and os.path.exists(creds_path):
+            os.remove(creds_path)
+        console.print("[dim]Temporary files cleaned up.[/dim]")
 
 if __name__ == "__main__":
     app()
