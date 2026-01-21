@@ -4,7 +4,11 @@ import base64
 import tempfile
 import subprocess
 import requests
+import urllib3
 import typer
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 from rich.console import Console
 from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
@@ -27,7 +31,7 @@ def fetch_vpn_servers() -> List[Dict[str, Any]]:
             transient=True,
         ) as progress:
             progress.add_task("fetch", total=None)
-            response = requests.get(VPN_GATE_API_URL, timeout=30)
+            response = requests.get(VPN_GATE_API_URL, timeout=30, verify=False)
             response.raise_for_status()
             
         # The API returns a CSV file with a header and '*' lines at the end
