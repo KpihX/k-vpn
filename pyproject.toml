@@ -1,0 +1,21 @@
+[project]
+name = "k-vpn"
+version = "1.0.0"
+description = "Automated CLI tool to fetch and connect to global VPN Gate servers securely."
+readme = "README.md"
+authors = [
+    { name = "KpihX" }
+]
+license = { text = "MIT" }
+requires-python = ">=3.8"
+dependencies = [
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "requests>=2.0.0"
+]
+
+[build-system]
+requires = [
+    "uv_build>=0.9.21,<0.10.0",
+]
+build-backend = "uv_build"
