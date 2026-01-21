@@ -173,12 +173,40 @@ def connect_to_country(country_name: str, servers: List[Dict[str, Any]]):
             "--data-ciphers-fallback", "AES-128-CBC"
         ]
         
-        # We stream the output directly to the user so they can see logs/errors
-        # and handle Ctrl+C naturally
-        subprocess.run(cmd, check=False)
+        # Use Popen to monitor output in real-time
+        process = subprocess.Popen(
+            cmd, 
+            stdout=subprocess.PIPE, 
+            stderr=subprocess.STDOUT, 
+            text=True,
+            bufsize=1
+        )
+        
+        connected = False
+        for line in iter(process.stdout.readline, ""):
+            console.print(line.strip())
+            
+            if "Initialization Sequence Completed" in line and not connected:
+                connected = True
+                console.print("\n")
+                console.print(Panel(
+                    f"[bold green]✓ SUCCESSFULLY CONNECTED[/bold green]\n"
+                    f"[bold white]Country:[/bold white] {country_name}\n"
+                    f"[bold white]Server IP:[/bold white] [cyan]{ip}[/cyan]\n"
+                    f"[bold white]Speed:[/bold white] [yellow]{speed:.2f} Mbps[/yellow]",
+                    title="[bold green]VPN Active[/bold green]",
+                    border_style="green",
+                    expand=False
+                ))
+                console.print("[dim]Press CTRL+C to disconnect...[/dim]\n")
+        
+        process.wait()
         
     except KeyboardInterrupt:
-        console.print("\n[bold red]Connection interrupted by user.[/bold red]")
+        console.print("\n[bold red]Disconnecting and cleaning up...[/bold red]")
+        if 'process' in locals():
+            # Send SIGTERM to the sudo process, which should relay it to OpenVPN
+            process.terminate()
     except Exception as e:
         console.print(f"[bold red]Connection failed:[/bold red] {e}")
     finally:
