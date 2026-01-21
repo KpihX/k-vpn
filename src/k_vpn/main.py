@@ -149,23 +149,27 @@ def connect_to_country(country_name: str, servers: List[Dict[str, Any]]):
         creds_path = os.path.join(config_dir, "vpn_creds.txt")
         with open(creds_path, "w") as f:
             f.write("vpn\nvpn\n")
-        os.chmod(creds_path, 0o644) # Needs to be readable by sudo user
+        os.chmod(creds_path, 0o600) # Only readable by current user (and root via sudo)
         
         # Create a temporary file for the config
         with tempfile.NamedTemporaryFile(mode='wb', dir=config_dir, suffix='.ovpn', delete=False) as temp_config:
             temp_config.write(ovpn_data)
             config_path = temp_config.name
         
-        # Ensure the file is readable by everyone (specifically sudo user)
-        os.chmod(config_path, 0o644)
+        # Ensure the file is readable only by the user
+        os.chmod(config_path, 0o600)
             
         console.print(f"[dim]Config saved to {config_path}[/dim]")
         console.print("[bold yellow]Launching OpenVPN (sudo required)...[/bold yellow]")
         
         # Run OpenVPN
-        # We use sudo because OpenVPN typically needs root to change routes/interfaces
-        # We pass the credentials file to avoid manual prompt
-        cmd = ["sudo", "openvpn", "--config", config_path, "--auth-user-pass", creds_path]
+        # --data-ciphers-fallback handles older servers using AES-128-CBC
+        cmd = [
+            "sudo", "openvpn", 
+            "--config", config_path, 
+            "--auth-user-pass", creds_path,
+            "--data-ciphers-fallback", "AES-128-CBC"
+        ]
         
         # We stream the output directly to the user so they can see logs/errors
         # and handle Ctrl+C naturally
